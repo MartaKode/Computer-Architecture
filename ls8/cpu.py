@@ -7,7 +7,19 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        # Step 1: Constructor
+        self.reg = [0] * 8 # R0 - R7
+        self.ram = [0] * 256 #  256 bites memory
+        self.pc = 0
+
+        self.running = False
+
+    # Step 2: RAM methods (ram_read & ram_write)
+    def ram_read(self, address):
+        return self.ram[address]
+
+    def ram_write(self, value, address):
+        self.ram[address] = value
 
     def load(self):
         """Load a program into memory."""
@@ -60,6 +72,48 @@ class CPU:
 
         print()
 
+    # Step 3: run() method
     def run(self):
         """Run the CPU."""
-        pass
+        self.running = True
+
+        while self.running:
+            ir = self.ram[self.pc] # Instruction Register, copy of the currently-executing intruction
+
+            if ir ==0b00000001: # HTL -- Halt
+                # self.running = False
+                self.htl_instruction()
+
+            elif ir == 0b10000010: # SAVE_REG -- Adding
+                reg_num = self.ram[self.pc+1]
+                value = self.ram[self.pc+2]
+                self.reg[reg_num] = value
+                # print(self.reg)
+                self.pc += 3
+
+            elif ir == 0b01000111: # PRINT_REG
+                reg_num = self.ram[self.pc+1]
+                print(self.reg[reg_num])
+                self.pc += 2
+
+            else:
+                print(f"Unknown instrution {ir}")
+
+    # Step 4: HTL instruction handler
+    def htl_instruction(self):
+        self.running = False
+
+    # Step 5: LDI instruction
+    def ldi_instruction(self):
+        reg_num = self.ram[self.pc+1]
+        value = self.ram[self.pc+2]
+
+        self.reg[reg_num] = value
+
+        self.pc += 3
+
+    # Step 6: PRN instruction
+    def prn_instruction(self):
+        reg_num = self.ram[self.pc+1]
+        print(self.reg[reg_num])
+        self.pc += 2

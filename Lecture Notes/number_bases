@@ -1,0 +1,96 @@
+Number Bases
+------------
+
+It's the "language" that a number is written down in.
+
+Douze = Twelve
+1100 = 12
+
+Base 2: binary
+Base 8: octal (rarely used)
+Base 10: decimal (what we know from grade school, regular boring ol numbers)
+Base 16: hexadecimal, "hex"
+Base 64: base 64
+
+
+Base 10 (decimal)
+
++-----1000's place  -> 10^3
+|+----100's place   -> 10^2
+||+---10's place    -> 10^1
+|||+--1's place     -> 10^0
+||||
+abcd
+
+1 2 3 4
+
+1 1000
+2 100s
+3 100s
+4 100s
+
+1234 = 1 * 1000 + 2 * 100 + 3 * 10 + 4 * 1
+       ^          ^         ^        ^
+
+Base 2 (binary)
+
++-----8's place     -> 2^3
+|+----4's place     -> 2^2
+||+---2's place     -> 2^1
+|||+--1's place     -> 2^0
+||||
+abcd
+
+0011 binary
+
+0011 binary == 0*8 + 0*4 + 1*2 + 1*1 == 3 decimal
+^
+binary digits ("bit")
+
+8 bits = "byte"
+4 bits = "nybble"
+
+To specify the base in code:
+
+Prefix
+------
+[none]  decimal
+0b      binary
+0x      hex
+0o      octal
+
+
+
+yellow
+#ffff00
+
+red         green       blue
+ff          ff          00          hex
+255         255         0           decimal
+11111111    11111111    0000000     binary 
+
+
+0000 0
+0001 1
+0010 2
+0011 3
+0100 4
+0101 5
+0110 6 
+0111 7
+1000 8
+1001 9    
+1010 A  10
+1011 B  11
+1100 C  12
+1101 D  13
+1110 E  14
+1111 F  15
+
+0b00101010 == 0x2A
+
+    0010 1010
+      2    A
+    
+0b101 == 5
+0b1100 == 0xC
