@@ -1,4 +1,9 @@
 """CPU functionality."""
+HLT = 0b00000001
+LDI = 0b10000010
+PRN = 0b01000111
+ADD = 0b10100000
+MUL = 0b10100010
 
 import sys
 
@@ -14,6 +19,13 @@ class CPU:
 
         self.running = False
 
+        self.branchtable = {}
+        self.branchtable[HLT] = self.hlt_instruction
+        self.branchtable[LDI] = self.ldi_instruction
+        self.branchtable[PRN] = self.prn_instruction
+        self.branchtable[ADD] = self.add_instruction
+        self.branchtable[MUL] = self.mul_instruction
+
     # Step 2: RAM methods (ram_read & ram_write)
     def ram_read(self, address):
         return self.ram[address]
@@ -21,27 +33,59 @@ class CPU:
     def ram_write(self, value, address):
         self.ram[address] = value
 
+    # def load(self):
+    #     """Load a program into memory."""
+
+    #     address = 0
+
+    #     # For now, we've just hardcoded a program:
+
+    #     program = [
+    #         # From print8.ls8
+    #         0b10000010, # LDI R0,8
+    #         0b00000000,
+    #         0b00001000,
+    #         0b01000111, # PRN R0
+    #         0b00000000,
+    #         0b00000001, # HLT
+    #     ]
+
+    #     for instruction in program:
+    #         self.ram[address] = instruction
+    #         address += 1
+
+    # Step 7: un-hardcoded load()
     def load(self):
-        """Load a program into memory."""
 
-        address = 0
+        if len(sys.argv) != 2:
+            print("usage: comp.py filename")
+            sys.exit(1)
 
-        # For now, we've just hardcoded a program:
+        try:
+            address = 0
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
+            with open(sys.argv[1]) as f:
+                for line in f:
+                    t = line.split('#')
+                    instruction = t[0].strip()
 
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+                    if instruction == "":
+                        continue
+                    
+                    try:
+                        instruction = int(instruction, 2) # can specify base as 2nd argument
+                    except ValueError:
+                        print(f"Invalid number '{instruction}'")
+                        sys.exit(1)
 
+                    # print(line, end='')
+                    # print(n)
+                    self.ram[address] = instruction
+                    address += 1
+
+        except FileNotFoundError:
+            print(f"File not found: {sys.argv[1]}")
+            sys.exit(2)
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -49,8 +93,12 @@ class CPU:
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         #elif op == "SUB": etc
+        # Step 8: MUL -- multiply
+        if op == 'MUL':
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
+    
 
     def trace(self):
         """
@@ -72,35 +120,82 @@ class CPU:
 
         print()
 
+    def add_instruction(self):
+        reg_a = self.ram[self.pc + 1]
+        reg_b = self.ram[self.pc + 2]
+
+        self.alu("ADD", reg_a, reg_b)
+
+        self.pc += 3
+
+    # STEP 8: MUL instruction
+
+    def mul_instruction(self):
+        reg_a = self.ram[self.pc + 1]
+        reg_b = self.ram[self.pc + 2]
+
+        self.alu("MUL", reg_a, reg_b)
+
+        self.pc += 3
+
     # Step 3: run() method
+    # def run(self):
+    #     """Run the CPU."""
+    #     self.running = True
+
+    #     while self.running:
+    #         ir = self.ram[self.pc] # Instruction Register, copy of the currently-executing intruction
+
+    #         if ir ==HLT: # HLT -- Halt
+    #             # self.running = False
+    #             self.hlt_instruction()
+
+    #         elif ir == LDI: # SAVE_REG -- LDI
+    #             # reg_num = self.ram[self.pc+1]
+    #             # value = self.ram[self.pc+2]
+    #             # self.reg[reg_num] = value
+    #             # # print(self.reg)
+    #             # self.pc += 3
+    #             self.ldi_instruction()
+
+    #         elif ir == PRN: # PRINT_REG -- PRN
+    #             # reg_num = self.ram[self.pc+1]
+    #             # print(self.reg[reg_num])
+    #             # self.pc += 2
+    #             self.prn_instruction()
+
+    #         # Step 8: MUL -- multiply
+    #         elif ir == MUL: # MUL
+    #             reg_a = self.ram[self.pc + 1]
+    #             reg_b = self.ram[self.pc + 2]
+
+    #             # self.reg[reg_a] *= self.reg[reg_b]
+    #             self.alu("MUL", reg_a, reg_b)
+
+    #             self.pc += 3
+
+    #         else:
+    #             print(f"Unknown instrution {ir}")
+
+
+    # Step 9: Beautify while loop in run():
     def run(self):
         """Run the CPU."""
         self.running = True
 
         while self.running:
             ir = self.ram[self.pc] # Instruction Register, copy of the currently-executing intruction
-
-            if ir ==0b00000001: # HTL -- Halt
-                # self.running = False
-                self.htl_instruction()
-
-            elif ir == 0b10000010: # SAVE_REG -- Adding
-                reg_num = self.ram[self.pc+1]
-                value = self.ram[self.pc+2]
-                self.reg[reg_num] = value
-                # print(self.reg)
-                self.pc += 3
-
-            elif ir == 0b01000111: # PRINT_REG
-                reg_num = self.ram[self.pc+1]
-                print(self.reg[reg_num])
-                self.pc += 2
-
+            
+            if ir in self.branchtable:
+                self.branchtable[ir]()
             else:
                 print(f"Unknown instrution {ir}")
 
-    # Step 4: HTL instruction handler
-    def htl_instruction(self):
+
+
+
+    # Step 4: Hlt instruction handler
+    def hlt_instruction(self):
         self.running = False
 
     # Step 5: LDI instruction
@@ -117,3 +212,5 @@ class CPU:
         reg_num = self.ram[self.pc+1]
         print(self.reg[reg_num])
         self.pc += 2
+
+    
