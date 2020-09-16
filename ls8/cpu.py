@@ -4,6 +4,9 @@ LDI = 0b10000010
 PRN = 0b01000111
 ADD = 0b10100000
 MUL = 0b10100010
+PUSH = 0b01000101
+POP = 0b01000110
+SP = 0b00000111
 
 import sys
 
@@ -25,6 +28,11 @@ class CPU:
         self.branchtable[PRN] = self.prn_instruction
         self.branchtable[ADD] = self.add_instruction
         self.branchtable[MUL] = self.mul_instruction
+        self.branchtable[PUSH] = self.push_instruction
+        self.branchtable[POP] = self.pop_instruction
+
+        # STEP 10
+        self.reg[SP] = 0xF4
 
     # Step 2: RAM methods (ram_read & ram_write)
     def ram_read(self, address):
@@ -120,23 +128,6 @@ class CPU:
 
         print()
 
-    def add_instruction(self):
-        reg_a = self.ram[self.pc + 1]
-        reg_b = self.ram[self.pc + 2]
-
-        self.alu("ADD", reg_a, reg_b)
-
-        self.pc += 3
-
-    # STEP 8: MUL instruction
-
-    def mul_instruction(self):
-        reg_a = self.ram[self.pc + 1]
-        reg_b = self.ram[self.pc + 2]
-
-        self.alu("MUL", reg_a, reg_b)
-
-        self.pc += 3
 
     # Step 3: run() method
     # def run(self):
@@ -213,4 +204,59 @@ class CPU:
         print(self.reg[reg_num])
         self.pc += 2
 
+    def add_instruction(self):
+        reg_a = self.ram[self.pc + 1]
+        reg_b = self.ram[self.pc + 2]
+
+        self.alu("ADD", reg_a, reg_b)
+
+        self.pc += 3
+
+    # STEP 8: MUL instruction
+
+    def mul_instruction(self):
+        reg_a = self.ram[self.pc + 1]
+        reg_b = self.ram[self.pc + 2]
+
+        self.alu("MUL", reg_a, reg_b)
+
+        self.pc += 3
+
+    # STEP 10: Stack System
+
+    def push_instruction(self):
+        # Decrement SP
+        self.reg[SP] -= 1
+
+        # Get the reg num to push
+        reg_num = self.ram[self.pc + 1]
+
+        # Get the value to push
+        value = self.reg[reg_num]
+
+        # Copy the value to the SP address
+        top_of_stack_addr = self.reg[SP]
+        self.ram[top_of_stack_addr] = value
+
+        # print(memory[0xea:0xf4])
+
+        self.pc += 2
+
+    def pop_instruction(self):
+        # Get reg to pop into
+        reg_num = self.ram[self.pc + 1]
+
+        # Get the top of stack addr
+        top_of_stack_addr = self.reg[SP]
+
+        # Get the value at the top of the stack
+        value = self.ram[top_of_stack_addr]
+
+        # Store the value in the register
+        self.reg[reg_num] = value
+
+        # Increment SP
+        self.reg[SP] += 1
+
+        self.pc += 2
     
