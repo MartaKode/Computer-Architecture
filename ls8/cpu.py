@@ -2,11 +2,13 @@
 HLT = 0b00000001
 LDI = 0b10000010
 PRN = 0b01000111
-ADD = 0b10100000
 MUL = 0b10100010
 PUSH = 0b01000101
 POP = 0b01000110
 SP = 0b00000111
+ADD = 0b10100000
+CALL = 0b01010000
+RET = 0b00010001
 
 import sys
 
@@ -26,10 +28,13 @@ class CPU:
         self.branchtable[HLT] = self.hlt_instruction
         self.branchtable[LDI] = self.ldi_instruction
         self.branchtable[PRN] = self.prn_instruction
-        self.branchtable[ADD] = self.add_instruction
         self.branchtable[MUL] = self.mul_instruction
         self.branchtable[PUSH] = self.push_instruction
         self.branchtable[POP] = self.pop_instruction
+
+        self.branchtable[ADD] = self.add_instruction
+        self.branchtable[CALL] = self.call_instruction
+        self.branchtable[RET] = self.ret_instruction
 
         # STEP 10
         self.reg[SP] = 0xF4
@@ -98,11 +103,11 @@ class CPU:
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
-        if op == "ADD":
+        if op == 'ADD':
             self.reg[reg_a] += self.reg[reg_b]
         #elif op == "SUB": etc
         # Step 8: MUL -- multiply
-        if op == 'MUL':
+        elif op == 'MUL':
             self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
@@ -181,6 +186,7 @@ class CPU:
                 self.branchtable[ir]()
             else:
                 print(f"Unknown instrution {ir}")
+                sys.exit(3)
 
 
 
@@ -204,13 +210,6 @@ class CPU:
         print(self.reg[reg_num])
         self.pc += 2
 
-    def add_instruction(self):
-        reg_a = self.ram[self.pc + 1]
-        reg_b = self.ram[self.pc + 2]
-
-        self.alu("ADD", reg_a, reg_b)
-
-        self.pc += 3
 
     # STEP 8: MUL instruction
 
@@ -259,4 +258,48 @@ class CPU:
         self.reg[SP] += 1
 
         self.pc += 2
+    
+    # STEP 11: CALL and RET (also ADD)
+    def add_instruction(self):
+        reg_a = self.ram[self.pc + 1]
+        reg_b = self.ram[self.pc + 2]
+
+        self.alu("ADD", reg_a, reg_b)
+
+        self.pc += 3
+
+
+    def call_instruction(self):
+        # Compute return addr
+        return_addr = self.pc + 2
+
+        # Push return addr on stack:
+        # Decrement SP
+        self.reg[SP] -= 1
+
+        # Copy the value to the SP address
+        top_of_stack_addr = self.reg[SP]
+        self.ram[top_of_stack_addr] = return_addr
+
+        # Get the value from the operand reg
+        reg_num = self.ram[self.pc + 1]
+        value = self.reg[reg_num]
+
+        # Set the self.pc to that value 
+        self.pc = value
+        
+
+    def ret_instruction(self):
+        # Compute return addr 
+        # Get the top of stack addr
+        top_of_stack_addr = self.reg[SP]
+
+        # Get the value at the top of the stack
+        value = self.ram[top_of_stack_addr]
+
+        # Increment the SP
+        self.reg[SP] += 1
+
+        # and set it to pc
+        self.pc = value
     
