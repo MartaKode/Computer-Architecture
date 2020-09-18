@@ -9,6 +9,11 @@ SP = 0b00000111
 ADD = 0b10100000
 CALL = 0b01010000
 RET = 0b00010001
+# ~~~~SPRINT~~~~~
+CMP = 0b10100111
+JMP = 0b01010100
+JEQ = 0b01010101
+JNE = 0b01010110
 
 import sys
 
@@ -38,6 +43,16 @@ class CPU:
 
         # STEP 10
         self.reg[SP] = 0xF4
+
+        # ~~~~SPRINT~~~~~
+        self.branchtable[CMP] = self.cmp_instruction
+        self.branchtable[JMP] = self.jmp_instruction
+        self.branchtable[JEQ] = self.jeq_instruction
+        self.branchtable[JNE] = self.jne_instruction
+        # Flags:
+        self.E = None
+        self.L = None
+        self.G = None
 
     # Step 2: RAM methods (ram_read & ram_write)
     def ram_read(self, address):
@@ -109,6 +124,36 @@ class CPU:
         # Step 8: MUL -- multiply
         elif op == 'MUL':
             self.reg[reg_a] *= self.reg[reg_b]
+        # ~~~~~~~~SPRINT~~~~~~~~~
+        elif op == 'CMP':
+            if self.reg[reg_a] == self.reg[reg_b]:
+                self.E = 1
+                self.L = 0
+                self.G = 0
+            elif self.reg[reg_a] < self.reg[reg_b]:
+                self.E = 0
+                self.L = 1
+                self.G = 0
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                self.E = 0
+                self.L = 0
+                self.G = 1
+
+        # ~~~~ STRETCH --- Additional ALU operations
+        elif op == 'AND':
+            self.reg[reg_a] &= self.reg[reg_b]
+        elif op == 'OR':
+            self.reg[reg_a] |= self.reg[reg_b]
+        elif op == 'XOR': 
+            self.reg[reg_a] ^= self.reg[reg_b]
+        elif op == 'NOT':
+            self.reg[reg_a] = ~self.reg[reg_b]
+        elif op == 'SHL': # shift left
+            self.reg[reg_a] <<= self.reg[reg_b]
+        elif op == 'SHR': # shift right
+            self.reg[reg_a] >>= self.reg[reg_b]
+        elif op == 'MOD':
+            self.reg[reg_a] %= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
     
@@ -134,46 +179,6 @@ class CPU:
         print()
 
 
-    # Step 3: run() method
-    # def run(self):
-    #     """Run the CPU."""
-    #     self.running = True
-
-    #     while self.running:
-    #         ir = self.ram[self.pc] # Instruction Register, copy of the currently-executing intruction
-
-    #         if ir ==HLT: # HLT -- Halt
-    #             # self.running = False
-    #             self.hlt_instruction()
-
-    #         elif ir == LDI: # SAVE_REG -- LDI
-    #             # reg_num = self.ram[self.pc+1]
-    #             # value = self.ram[self.pc+2]
-    #             # self.reg[reg_num] = value
-    #             # # print(self.reg)
-    #             # self.pc += 3
-    #             self.ldi_instruction()
-
-    #         elif ir == PRN: # PRINT_REG -- PRN
-    #             # reg_num = self.ram[self.pc+1]
-    #             # print(self.reg[reg_num])
-    #             # self.pc += 2
-    #             self.prn_instruction()
-
-    #         # Step 8: MUL -- multiply
-    #         elif ir == MUL: # MUL
-    #             reg_a = self.ram[self.pc + 1]
-    #             reg_b = self.ram[self.pc + 2]
-
-    #             # self.reg[reg_a] *= self.reg[reg_b]
-    #             self.alu("MUL", reg_a, reg_b)
-
-    #             self.pc += 3
-
-    #         else:
-    #             print(f"Unknown instrution {ir}")
-
-
     # Step 9: Beautify while loop in run():
     def run(self):
         """Run the CPU."""
@@ -187,8 +192,6 @@ class CPU:
             else:
                 print(f"Unknown instrution {ir}")
                 sys.exit(3)
-
-
 
 
     # Step 4: Hlt instruction handler
@@ -303,3 +306,126 @@ class CPU:
         # and set it to pc
         self.pc = value
     
+    # ~~~~~~~~~SPRINT~~~~~~~~
+    def cmp_instruction(self):
+        # get the 2 registers
+        reg_a = self.ram[self.pc + 1]
+        reg_b = self.ram[self.pc + 2]
+
+        # use ALU to handle comparison between them and set FLAG values
+        self.alu("CMP", reg_a, reg_b)
+
+        # increment pc to reach next instructions
+        self.pc += 3
+
+    def jmp_instruction(self): #  ???
+        # get address of the given register and set it to pc
+        reg_num = self.ram[self.pc + 1]
+        self.pc = self.reg[reg_num]
+
+    def jeq_instruction(self):
+        if self.E:
+            # if E == 1 : jump
+            self.jmp_instruction()
+        else:
+            # otherwise, move on to the next intruction
+            self.pc += 2
+    
+    def jne_instruction(self):
+        if not self.E:
+            # if E == 0: jump
+            self.jmp_instruction()
+        else:
+            # otherwise, move on to the next instruction
+            self.pc += 2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Step 3: run() method
+    # def run(self):
+    #     """Run the CPU."""
+    #     self.running = True
+
+    #     while self.running:
+    #         ir = self.ram[self.pc] # Instruction Register, copy of the currently-executing intruction
+
+    #         if ir ==HLT: # HLT -- Halt
+    #             # self.running = False
+    #             self.hlt_instruction()
+
+    #         elif ir == LDI: # SAVE_REG -- LDI
+    #             # reg_num = self.ram[self.pc+1]
+    #             # value = self.ram[self.pc+2]
+    #             # self.reg[reg_num] = value
+    #             # # print(self.reg)
+    #             # self.pc += 3
+    #             self.ldi_instruction()
+
+    #         elif ir == PRN: # PRINT_REG -- PRN
+    #             # reg_num = self.ram[self.pc+1]
+    #             # print(self.reg[reg_num])
+    #             # self.pc += 2
+    #             self.prn_instruction()
+
+    #         # Step 8: MUL -- multiply
+    #         elif ir == MUL: # MUL
+    #             reg_a = self.ram[self.pc + 1]
+    #             reg_b = self.ram[self.pc + 2]
+
+    #             # self.reg[reg_a] *= self.reg[reg_b]
+    #             self.alu("MUL", reg_a, reg_b)
+
+    #             self.pc += 3
+
+    #         else:
+    #             print(f"Unknown instrution {ir}")
